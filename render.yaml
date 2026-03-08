@@ -3,7 +3,7 @@ services:
     name: openclaw
     runtime: docker
     plan: free
-    dockerCommand: node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080
+    dockerCommand: dockerCommand: ./scripts/render-start.sh
     healthCheckPath: /health
     envVars:
       - key: PORT
