@@ -3,7 +3,7 @@ services:
     name: openclaw
     runtime: docker
     plan: free
-    dockerCommand: dockerCommand: ./scripts/render-start.sh
+    dockerCommand:./scripts/render-start.sh
     healthCheckPath: /health
     envVars:
       - key: PORT
