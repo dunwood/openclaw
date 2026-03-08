@@ -32,8 +32,9 @@ services:
     name: openclaw
     runtime: docker
     plan: free
-    dockerCommand: node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080
-    healthCheckPath: /health
+    dockerCommand: >-
+      sh -lc 'node openclaw.mjs config set gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback true --strict-json && node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080'
+    healthCheckPath: /healthz
     envVars:
       - key: PORT
         value: "8080"
@@ -51,13 +52,13 @@ services:
 
 Key Blueprint features used:
 
-| Feature               | Purpose                                                    |
-| --------------------- | ---------------------------------------------------------- |
-| `runtime: docker`     | Builds from the repo's Dockerfile                          |
-| `healthCheckPath`     | Render monitors `/health` and restarts unhealthy instances |
-| `sync: false`         | Prompts for value during deploy (secrets)                  |
-| `generateValue: true` | Auto-generates a cryptographically secure value            |
-| `dockerCommand`       | Binds OpenClaw to Render's expected public port (`8080`)   |
+| Feature               | Purpose                                                         |
+| --------------------- | --------------------------------------------------------------- |
+| `runtime: docker`     | Builds from the repo's Dockerfile                               |
+| `healthCheckPath`     | Render monitors `/healthz` (alias: `/health`) for health checks |
+| `sync: false`         | Prompts for value during deploy (secrets)                       |
+| `generateValue: true` | Auto-generates a cryptographically secure value                 |
+| `dockerCommand`       | Binds OpenClaw to Render's expected public port (`8080`)        |
 
 ## Choosing a plan
 
@@ -141,6 +142,8 @@ Check the deploy logs in the Render Dashboard. Common issues:
 - Missing `SETUP_PASSWORD` — the Blueprint prompts for this, but verify it's set
 - Port mismatch — Render requires your app to listen on `0.0.0.0:8080`; keep
   `dockerCommand`/`OPENCLAW_GATEWAY_PORT` aligned with `PORT=8080`
+- Control UI startup guard — for non-loopback bind, OpenClaw requires Control UI origin policy.
+  The Blueprint `dockerCommand` pre-sets `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true` before gateway start.
 
 ### Slow cold starts (free tier)
 
@@ -153,7 +156,7 @@ regularly export your config via `/setup/export`.
 
 ### Health check failures
 
-Render expects a 200 response from `/health` within 30 seconds. If builds succeed but deploys fail, the service may be taking too long to start. Check:
+Render expects a 200 response from `/healthz` within 30 seconds. (`/health` is also supported.) If builds succeed but deploys fail, the service may be taking too long to start. Check:
 
 - Build logs for errors
 - Whether the container runs locally with `docker build && docker run`
